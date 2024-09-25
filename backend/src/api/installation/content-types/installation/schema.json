@@ -41,6 +41,13 @@
       "relation": "oneToMany",
       "target": "api::measurement.measurement",
       "mappedBy": "installation"
+    },
+    "tag": {
+      "type": "enumeration",
+      "enum": [
+        "raw",
+        "qc"
+      ]
     }
   }
 }

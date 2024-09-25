@@ -27,17 +27,7 @@ class TokenHelper:
             data=payload,
             auth=HTTPBasicAuth(self.client_name, self.client_secret),
         ).json()
-        return response["access_token"], datetime.now() + timedelta(
-            seconds=response["expires_in"]
-        )
-
-
-# data = requests.request(
-#     "GET",
-#     f"https://data.{env['INNET_HOST']}/v1/timeseries/measurements",
-#     params={"logger_id": logger.id},
-#     headers=auth_header,
-# )
+        return response["access_token"], datetime.now() + timedelta(seconds=response["expires_in"])
 
 
 def query_innet_loggers(field_name: str):
@@ -53,11 +43,7 @@ def query_innet_loggers(field_name: str):
         headers=innet_auth_header,
     ).json()
 
-    if (
-        "values" not in data
-        or not isinstance(data["values"], list)
-        or not len(data["values"])
-    ):
+    if "values" not in data or not isinstance(data["values"], list) or not len(data["values"]):
         raise ValueError("Measurements have no values")
 
     if (

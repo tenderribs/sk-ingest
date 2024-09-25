@@ -8,6 +8,7 @@ env = {
     "INNET_CLIENT_NAME": os.getenv("INNET_CLIENT_NAME"),
     "INNET_CLIENT_SECRET": os.getenv("INNET_CLIENT_SECRET"),
     "INNET_HOST": os.getenv("INNET_HOST"),
+    "METEOBLUE_SECRET": os.getenv("METEOBLUE_SECRET"),
     "API_BASE_URL": os.getenv("API_BASE_URL"),
     "CONNECTOR_API_TOKEN": os.getenv("CONNECTOR_API_TOKEN"),
 }

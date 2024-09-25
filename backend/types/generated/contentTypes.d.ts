@@ -507,6 +507,7 @@ export interface ApiInstallationInstallation
       'oneToMany',
       'api::measurement.measurement'
     >;
+    tag: Schema.Attribute.Enumeration<['raw', 'qc']>;
     createdAt: Schema.Attribute.DateTime;
     updatedAt: Schema.Attribute.DateTime;
     publishedAt: Schema.Attribute.DateTime;
