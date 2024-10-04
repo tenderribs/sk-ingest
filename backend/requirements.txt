@@ -1,0 +1,5 @@
+Flask-SQLAlchemy
+Flask-Migrate
+Flask-Admin[sqlalchemy]
+connexion[swagger-ui,uvicorn]
+python-dotenv

@@ -40,7 +40,7 @@ class TokenHelper:
 # )
 
 
-def query_innet_loggers(field_name: str):
+def query_innet_loggers(token: str, deveui: str, field_name: str):
     data = requests.request(
         "GET",
         f"https://data.{env['INNET_HOST']}/v1/timeseries/{field_name}/last_records",
@@ -50,7 +50,7 @@ def query_innet_loggers(field_name: str):
             "field": "final",
             "validity": "valid",
         },
-        headers=innet_auth_header,
+        headers={"Authorization": "Bearer " + token},
     ).json()
 
     if (
@@ -70,80 +70,79 @@ def query_innet_loggers(field_name: str):
     return data["values"][0], data["timestamps"][0]
 
 
+def get_measurements():
+    # Get authentication token
+    helper = TokenHelper(
+        f"https://id.{env['INNET_HOST']}",
+        env["INNET_CLIENT_NAME"],
+        env["INNET_CLIENT_SECRET"],
+    )
+
+    # Assume script execution complete before INNET token expiry
+    token, expires_at = helper.get_token()
+
+    now = datetime.now().isoformat()  # current date in ISO8601 format
+
+    # Fetch internal index of INNET loggers currently installed
+    # date filter: either indefinitely installed or in now in active period
+    # logic: (inst.end is None or (inst.start <= now && inst.end >= now))
+    installations = requests.request(
+        "GET",
+        f"{env['API_BASE_URL']}/installations",
+        params={
+            "populate[0]": "logger",
+            "populate[1]": "logger.model",
+            "filters[$or][0][end][$null]": True,
+            "filters[$or][1][$and][0][start][$lte]": now,
+            "filters[$or][1][$and][1][end][$gte]": now,
+        },
+    ).json()
+
+    if 'data' not in installations:
+        return
+
+    for installation in installations["data"]:
+        logger = installation["logger"]
+
+        deveui = logger["deveui"]
+        field_mapping = logger["model"]["field_mapping"]
+
+        print(f"Fetching latest data for logger.id {deveui}")
+
+        for fm in field_mapping:
+            sensor_type, field_name = fm["type"], fm["field"]
+
+            # Query INNET REST API for selected loggers' sensor types
+            try:
+                value, timestamp = query_innet_loggers(token, deveui, field_name)
+                print(f"{sensor_type} \t {round(value, 2)} \t {timestamp}")
+
+                res = requests.request(
+                    method="POST",
+                    url=f"{env['API_BASE_URL']}/measurements",
+                    json={
+                        "data": {
+                            "value": value,
+                            "type": sensor_type,
+                            "timestamp": timestamp,
+                            "installation": installation["id"],
+                        }
+                    },
+                    headers={"Authorization": "Bearer " + env["CONNECTOR_API_TOKEN"]},
+                )
+                print(res.status_code)
+                if res.status_code != 200 and res.status_code != 201:
+                    raise Exception("Unable to insert data into ugz API")
+
+            except Exception:
+                print(f"Couldn't add {field_name}, ignoring")
+
+        print("\n")
+
+
 if __name__ == "__main__":
     try:
         check_env()
-
-        # Get authentication token
-        helper = TokenHelper(
-            f"https://id.{env['INNET_HOST']}",
-            env["INNET_CLIENT_NAME"],
-            env["INNET_CLIENT_SECRET"],
-        )
-
-        # Assume script execution complete before INNET token expiry
-        token, expires_at = helper.get_token()
-
-        innet_auth_header = {"Authorization": "Bearer " + token}
-        sk_db_auth_header = {"Authorization": "Bearer " + env["CONNECTOR_API_TOKEN"]}
-
-        now = datetime.now().isoformat()  # current date in ISO8601 format
-
-        # Fetch internal index of INNET loggers currently installed
-        # date filter: either indefinitely installed or in now in active period
-        # logic: (inst.end is None or (inst.start <= now && inst.end >= now))
-        installations = requests.request(
-            "GET",
-            f"{env['API_BASE_URL']}/installations",
-            headers=sk_db_auth_header,
-            params={
-                "populate[0]": "logger",
-                "populate[1]": "logger.model",
-                "filters[$or][0][end][$null]": True,
-                "filters[$or][1][$and][0][start][$lte]": now,
-                "filters[$or][1][$and][1][end][$gte]": now,
-            },
-        ).json()
-
-        for installation in installations["data"]:
-            logger = installation["logger"]
-
-            deveui = logger["deveui"]
-            field_mapping = logger["model"]["field_mapping"]
-
-            print(f"Fetching latest data for logger.id {deveui}")
-
-            for fm in field_mapping:
-                sensor_type, field_name = fm["type"], fm["field"]
-
-                # Query INNET REST API for selected loggers' sensor types
-                try:
-                    # get the value
-
-                    value, timestamp = query_innet_loggers(field_name)
-                    print(f"{sensor_type} \t {round(value, 2)} \t {timestamp}")
-
-                    res = requests.request(
-                        method="POST",
-                        url=f"{env['API_BASE_URL']}/measurements",
-                        json={
-                            "data": {
-                                "value": value,
-                                "type": sensor_type,
-                                "timestamp": timestamp,
-                                "installation": installation["id"],
-                            }
-                        },
-                        headers=sk_db_auth_header,
-                    )
-                    print(res.status_code)
-                    if res.status_code != 200 and res.status_code != 201:
-                        raise Exception("Unable to insert data into ugz API")
-
-                except Exception:
-                    print(f"Couldn't add {field_name}, ignoring")
-
-            print("\n")
-
+        get_measurements()
     except Exception as e:
         print(f"An error occurred: {e}")
