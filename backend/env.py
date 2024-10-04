@@ -10,6 +10,7 @@ env = {
     "POSTGRES_HOST": os.getenv("POSTGRES_HOST"),
     "POSTGRES_PORT": os.getenv("POSTGRES_PORT"),
     "POSTGRES_DB": os.getenv("POSTGRES_DB"),
+    "APP_SETTINGS": os.getenv("APP_SETTINGS"),
 }
 
 db_url = "postgresql+psycopg2://%s:%s@%s:%s/%s" % (

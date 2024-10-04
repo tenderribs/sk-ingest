@@ -1,5 +1,6 @@
 Flask-SQLAlchemy
 Flask-Migrate
 Flask-Admin[sqlalchemy]
-connexion[swagger-ui,uvicorn]
+connexion[flask, swagger-ui, uvicorn]
 python-dotenv
+psycopg2-binary

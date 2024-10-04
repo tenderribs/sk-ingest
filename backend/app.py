@@ -1,21 +1,16 @@
-import flask
+from flask import Flask
+
 from flask_migrate import Migrate
-
-from env import db_url
-
 from models import db
 
-app = flask.Flask(__name__)
-app.config["DEBUG"] = True
-app.config["SQLALCHEMY_DATABASE_URI"] = db_url
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-app.config["CATCH_EXCEPTIONS"] = True
+app = Flask(__name__)
+app.config.from_object("config.DevelopmentConfig")
+db.init_app(app)
 
-# https://github.com/miguelgrinberg/Flask-Migrate
+# perform migration if CLI cmd issued
 migrate = Migrate(app, db)
 
-# Create the database tables.
-db.create_all()
 
-# start the flask loop
-app.run()
+if __name__ == "__main__":
+    # start the flask loop
+    app.run(host="0.0.0.0", port=8000)
