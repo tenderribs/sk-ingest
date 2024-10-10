@@ -23,6 +23,7 @@ class Provider(enum.Enum):
     ugz_intern = 1
     innet = 2
     meteoblue = 3
+    awel = 4
 
 
 class Site(db.Model):
@@ -30,7 +31,7 @@ class Site(db.Model):
     id = db.Column(db.Integer, primary_key=True)
 
     provider = db.Column(db.Enum(Provider), nullable=False)
-    name = db.Column(db.String(100), nullable=False)
+    name = db.Column(db.String(100), nullable=False, unique=True)
     wgs84_lat = db.Column(db.Float, nullable=False)
     wgs84_lon = db.Column(db.Float, nullable=False)
     masl = db.Column(db.Float, nullable=False)
@@ -56,8 +57,12 @@ class Logger(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     model_id = db.Column(db.Integer, db.ForeignKey("models.id"), nullable=False)
 
-    sensor_id = db.Column(db.String(100), nullable=False, default=lambda: str(uuid.uuid4()))
-    sensor_serial = db.Column(db.String(100), nullable=False, default=lambda: str(uuid.uuid4()))
+    sensor_id = db.Column(
+        db.String(100), unique=True, nullable=False, default=lambda: str(uuid.uuid4())
+    )
+    sensor_serial = db.Column(
+        db.String(100), unique=True, nullable=False, default=lambda: str(uuid.uuid4())
+    )
 
     installation = db.relationship("Installation", backref="logger", lazy=True)
     measurement = db.relationship("Measurement", backref="logger", lazy=True)
@@ -82,6 +87,3 @@ class Measurement(db.Model):
     measurement_type = db.Column(db.Enum(MeasurementType), nullable=False)
     value = db.Column(db.Float, nullable=False)
     timestamp = db.Column(db.DateTime, nullable=False)
-
-    logger = db.relationship("Logger", backref="measurement", lazy=True)
-    installation = db.relationship("Installation", backref="measurement", lazy=True)

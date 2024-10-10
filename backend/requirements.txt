@@ -4,3 +4,4 @@ Flask-Admin[sqlalchemy]
 connexion[flask, swagger-ui, uvicorn]
 python-dotenv
 psycopg2-binary
+pandas

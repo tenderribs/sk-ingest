@@ -11,6 +11,13 @@ db.init_app(app)
 migrate = Migrate(app, db)
 
 
+@app.cli.command("db-refresh")
+def refresh_db():
+    """Drop all tables"""
+
+    db.drop_all()
+
+
 if __name__ == "__main__":
     # start the flask loop
-    app.run(host="0.0.0.0", port=8000)
+    app.run(host="0.0.0.0", port=8000, debug=True)
